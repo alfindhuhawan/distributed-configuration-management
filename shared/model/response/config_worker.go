@@ -1,9 +1,12 @@
 package response
 
+import "net/http"
+
 type HitResponse struct {
-	URL              string `json:"url"`
-	StatusCode       int    `json:"status_code"`
-	ExternalResponse any    `json:"response"`
+	URL        string      `json:"url"`
+	StatusCode int         `json:"status_code"`
+	Header     http.Header `json:"header"`
+	Body       []byte      `json:"body"`
 }
 
 type ConfigWorkerResponse struct {

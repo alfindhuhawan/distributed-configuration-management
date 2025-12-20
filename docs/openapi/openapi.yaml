@@ -272,5 +272,12 @@ components:
           type: string
         status_code:
           type: integer
-        response:
-          nullable: true
+        header:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        body:
+          type: string
+          format: byte

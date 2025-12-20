@@ -15,8 +15,8 @@ func main() {
 
 	appMap := map[string]func() driver.RegistryContract{
 		"appcontroller": application.NewAppController(),
-		"appagent":      application.NewAppAgent(),
 		"appworker":     application.NewAppWorker(),
+		"appagent":      application.NewAppAgent(),
 	}
 	flag.Parse()
 
