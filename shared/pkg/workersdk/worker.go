@@ -5,7 +5,6 @@ import (
 	"distributed-configuration-management/shared/model/errorenum"
 	"distributed-configuration-management/shared/model/request"
 	"distributed-configuration-management/shared/model/response"
-	"encoding/json"
 	"io"
 	"net/http"
 	"sync"
@@ -84,11 +83,10 @@ func (w *workerImpl) Hit(ctx context.Context) (*response.HitResponse, error) {
 		return nil, err
 	}
 
-	var externalResponse any
-	json.Unmarshal(body, &externalResponse)
 	return &response.HitResponse{
-		URL:              cfg.URL,
-		StatusCode:       resp.StatusCode,
-		ExternalResponse: externalResponse,
+		URL:        cfg.URL,
+		StatusCode: resp.StatusCode,
+		Header:     resp.Header.Clone(),
+		Body:       body,
 	}, nil
 }

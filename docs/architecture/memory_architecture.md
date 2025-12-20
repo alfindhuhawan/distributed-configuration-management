@@ -30,7 +30,7 @@
 - REST API routes: `/api/v1/config` (POST), `/api/v1/hit` (GET).
 - Usecases:
   - `runconfig` updates the worker SDK with a new config URL.
-  - `getconfig` calls the worker SDK `Hit()` which makes the outbound request.
+  - `getconfig` calls the worker SDK `Hit()` which makes the outbound request and returns status, headers, and body bytes.
 - Gateway (prod): Mongo wrapper (minimal here; worker uses in-memory SDK).
 
 ## Shared Layer
@@ -38,13 +38,13 @@
 - `shared/model/`: entities, repositories, request/response payloads, errors/enums.
 - `shared/gateway/prod/`: concrete repository implementations (Mongo + config access).
 - `shared/pkg/agent`: auto-register + polling + backoff; manages agent_cache.json.
-- `shared/pkg/workersdk`: in-memory config store + outbound HTTP hit.
+- `shared/pkg/workersdk`: in-memory config store + outbound HTTP hit (status, headers, body bytes).
 
 ## Runtime Data Flow (High-Level)
 1. Controller service exposes register/config APIs and stores global config in Mongo.
 2. Agent service auto-registers with controller, writes `agent_cache.json`, and polls with version/ETag.
 3. On config changes, agent pushes config URL to worker via `/api/v1/config`.
-4. Worker stores URL in-memory; `/api/v1/hit` triggers outbound GET to that URL.
+4. Worker stores URL in-memory; `/api/v1/hit` triggers outbound GET and returns status, headers, and body bytes.
 
 ## Key Config + State
 - `config.json` defines ports, credentials, MongoDB, polling/backoff, and agent init settings.

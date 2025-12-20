@@ -135,7 +135,7 @@ The worker service stores config in memory and can make outbound HTTP calls usin
 
 - GET /api/v1/hit
   - Uses the worker SDK to call the stored URL.
-  - Returns the status code and response from the external service.
+  - Returns the status code, response headers, and raw body bytes from the external service.
 
 ### Usecases
 
@@ -152,6 +152,7 @@ The SDK is located in shared/pkg/workersdk and is intentionally simple:
 - Stores config in-memory with a read/write lock.
 - Ensures a URL exists before performing any request.
 - Uses a configurable timeout for outbound requests.
+- Returns status code, headers, and raw body bytes for the last hit.
 
 This separation allows the worker domain to remain independent of the HTTP transport and external network details.
 
