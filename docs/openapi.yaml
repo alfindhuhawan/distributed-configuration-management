@@ -1,0 +1,276 @@
+openapi: 3.0.3
+info:
+  title: Distributed Configuration Management API
+  version: 1.0.0
+  description: |
+    OpenAPI spec for the controller and worker services.
+    Only routes defined in each domain router.go are included.
+servers:
+  - url: http://localhost:8080
+    description: Controller service (appcontroller)
+  - url: http://localhost:8082
+    description: Worker service (appworker)
+
+paths:
+  /api/v1/register:
+    post:
+      tags:
+        - controller
+      summary: Register an agent
+      description: |
+        Registers a new agent and returns polling metadata.
+        Requires agent credential signature in Authorization header.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterAgentRequest'
+      responses:
+        '200':
+          description: Successful registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseRegisterAgent'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseError'
+        '403':
+          description: Forbidden
+
+  /api/v1/config:
+    get:
+      tags:
+        - controller
+      summary: Get global config
+      description: |
+        Returns current global config and version.
+        Uses an ETag-like version header for change detection.
+        If no change, response body sets code=304 but HTTP status remains 200.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ETag
+          in: header
+          required: false
+          schema:
+            type: string
+          description: Last known version as string (float)
+      responses:
+        '200':
+          description: Config response (code may be 200 or 304 in body)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseGetConfig'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseError'
+        '403':
+          description: Forbidden
+
+    post:
+      tags:
+        - controller
+        - worker
+      summary: Update config
+      description: |
+        This path is shared by both services, but behavior depends on the server.
+        - Controller server (appcontroller): updates global config and increments version.
+        - Worker server (appworker): stores the config URL in memory.
+
+        Controller requests require admin credential signature in Authorization header.
+      security:
+        - bearerAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/GlobalConfigRequest'
+                - $ref: '#/components/schemas/ConfigWorkerRequest'
+      responses:
+        '200':
+          description: Update applied
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ResponseUpdateConfig'
+                  - $ref: '#/components/schemas/ResponseConfigWorker'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseError'
+        '403':
+          description: Forbidden (controller only)
+
+  /api/v1/hit:
+    get:
+      tags:
+        - worker
+      summary: Hit configured URL
+      description: Performs an outbound GET to the configured URL.
+      responses:
+        '200':
+          description: Hit response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseHit'
+        '400':
+          description: Invalid state or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: SHA256_SIGNATURE
+      description: |
+        Authorization header uses 'Bearer <sha256(secretKey)>'.
+        Agent endpoints use agent secret, admin endpoints use admin secret.
+
+  schemas:
+    ResponseEnvelopeBase:
+      type: object
+      properties:
+        code:
+          type: integer
+        error_code:
+          type: string
+          nullable: true
+        code_message:
+          type: string
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        error_mapping:
+          nullable: true
+        data:
+          nullable: true
+
+    ResponseRegisterAgent:
+      allOf:
+        - $ref: '#/components/schemas/ResponseEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/RegisterAgentResponse'
+
+    ResponseGetConfig:
+      allOf:
+        - $ref: '#/components/schemas/ResponseEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/GlobalConfigResponse'
+
+    ResponseUpdateConfig:
+      allOf:
+        - $ref: '#/components/schemas/ResponseEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/GlobalConfigResponse'
+
+    ResponseConfigWorker:
+      allOf:
+        - $ref: '#/components/schemas/ResponseEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              type: object
+
+    ResponseHit:
+      allOf:
+        - $ref: '#/components/schemas/ResponseEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/HitResponse'
+
+    ResponseError:
+      allOf:
+        - $ref: '#/components/schemas/ResponseEnvelopeBase'
+
+    RegisterAgentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        ip:
+          type: string
+      required:
+        - name
+        - ip
+
+    RegisterAgentResponse:
+      type: object
+      properties:
+        agent_id:
+          type: string
+        poll_url:
+          type: string
+        poll_interval_seconds:
+          type: integer
+        agent_name:
+          type: string
+
+    GlobalConfigRequest:
+      type: object
+      properties:
+        url:
+          type: string
+        poll_interval_seconds:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+
+    GlobalConfigResponse:
+      type: object
+      properties:
+        url:
+          type: string
+        version:
+          type: number
+          format: double
+        poll_interval_seconds:
+          type: integer
+
+    ConfigWorkerRequest:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+
+    HitResponse:
+      type: object
+      properties:
+        url:
+          type: string
+        status_code:
+          type: integer
+        response:
+          nullable: true

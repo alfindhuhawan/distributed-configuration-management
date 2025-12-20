@@ -1,0 +1,52 @@
+{
+    "app": {
+      "name": "distributed-configuration-management",
+      "debug": true
+    },
+    "application_server": {
+        "app_controller_service": {
+          "port": 8080
+        },
+        "app_agent_service": {
+          "port": 8081
+        },
+        "app_worker_service": {
+          "port": 8082
+        }
+    },
+    "application_internal": {
+        "controller": {
+          "register_url": "http://localhost:8080/api/v1/register",
+          "get_config_url": "http://localhost:8080/api/v1/config"
+        }
+    },
+    "credentials": {
+      "admin": {
+        "secret_key": "AdminOnly"
+      },
+      "agent": {
+        "secret_key": "AgentCredential"
+      }
+    },
+    "poll_interval_seconds": 10,
+    "based_delay_seconds": 1,
+    "max_delay_seconds": 60,
+    "jwt_secret_key": "1ccd1271e18bccb5b1958e7d22db0821f12829d4bd12e5daa0f54f3937d4d45c7deabd0a6f2aec2daaabba928100c3a0930b1075c697a86ac9fd48dcbcb6cefe",
+    "database": {
+      "mongodb": {
+        "host": "localhost:27017",
+        "database": "distributed_configuration_management",
+        "username": "",
+        "password": ""
+      }
+    },
+    "agent_init": {
+      "name": "agent-2",
+      "ip": "10.0.0.1",
+      "worker_url": "http://localhost:8082/api/v1/config",
+      "agent_cache_loc": "./agent_cache.json"
+    },
+    "worker": {
+      "worker_timeout": 15
+    }
+}
