@@ -17,7 +17,7 @@ It follows a Clean Architecture / Gogen-style layout with explicit usecases, inp
 - Persistence: MongoDB (controller service)
 - Architecture: Clean Architecture (Gogen-style layering)
 - Config: JSON-based config files (config.json, agent_cache.json)
-- Auth: SHA256 signature in Authorization: Bearer <hash> header
+- Auth: SHA256 signature in Authorization: Bearer <hash> header (You can get the signature by, encrypt SHA256 credentials.admin.secret_key or credentials.agent.secret_key from config.json)
 
 ---
 
@@ -85,4 +85,5 @@ Worker:
 - POST /api/v1/config (update worker config URL)
 - GET /api/v1/hit (call the configured URL)
 
-OpenAPI spec is available at docs/openapi.yaml.
+OpenAPI spec is available at docs/openapi/openapi.yaml.
+Postman JSON is available at docs/postman/distributed-configuration-management.json.
